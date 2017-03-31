@@ -1,5 +1,5 @@
 /*
- * switches,cpp
+ * switches.cpp
  *
  * James Fowkes (jamesfowkes@gmail.com)
  * for ASAP Watercrafts
@@ -37,7 +37,10 @@
 
 #define DEBOUNCE_MS 50 // Debounce time in ms
 
-#define SWITCH_LEFT_MASK (1<<5)
+#define SWITCH_PORT PORTA
+#define SWITCH_PIN PINA
+
+#define SWITCH_LEFT_MASK (1<<2)
 #define SWITCH_RIGHT_MASK (1<<3)
 #define SWITCH_KEYFOB_MASK (1<<7)
 #define SWITCH_MAGSWITCH2_MASK (1<<6)
@@ -75,7 +78,7 @@ static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
 	{
 		sw.timer = DEBOUNCE_MS; // Start the delay again
 
-		sw.currentstate  =  PINA & mask;   // read the button, all switches are on PINA.
+		sw.currentstate  =  SWITCH_PIN & mask;   // read the button, all switches are on PINA.
 
 		if (sw.currentstate == sw.previousstate)
 		{
@@ -98,6 +101,11 @@ static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
 /*
  * Public Functions
  */
+
+void switch_setup()
+{
+	SWITCH_PORT |= (SWITCH_LEFT_MASK | SWITCH_RIGHT_MASK | SWITCH_KEYFOB_MASK | SWITCH_MAGSWITCH2_MASK);
+}
 
 void switch_tick(uint32_t tick_ms)
 {

@@ -13,13 +13,28 @@
 #ifndef _BATTERY_H_
 #define _BATTERY_H_
 
-#define CHARGE_RECHECK_TIME_MS 60000 //The number of milliseconds to wait between checking the charger is still connected.
-#define INPUT_SETTLING_TIME_MS 150 //Number of ten millisecond interrupts to wait for charge input voltage to fall if the charger is not connected.
+/*
+ * Defines, Typedefs, Constants
+ */
 
+enum charge_mode
+{
+	CHARGE_MODE_NOT_CHARGING,
+	CHARGE_MODE_CHARGING,
+	CHARGE_MODE_TESTING_CHARGE_LEVEL
+};
+typedef enum charge_mode CHARGE_MODE;
+
+/*
+ * Public Functions
+ */
+
+void battery_setup();
 void battery_task();
 void battery_tick(uint32_t tick_ms);
 
 uint8_t battery_get_charge_mode();
-uint8_t battery_get_state(uint8_t channel);
+uint8_t battery_get_last_state();
+uint8_t battery_update_state(uint8_t channel);
 
 #endif

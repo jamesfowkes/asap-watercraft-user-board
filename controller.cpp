@@ -33,28 +33,24 @@
 
 #include "controller.h"
 #include "adc.h"
+#include "speed_sensor.h"
 #include "speed_leds.h"
 #include "battery.h"
 #include "battery_leds.h"
 #include "switches.h"
+#include "debug.h"
 
 /*
  * Defines, Typedefs, Constants
  */
 
-enum mode
-{
-    MODE_OFF,
-    MODE_ON,
-    MODE_CHARGING
-};
-typedef enum mode MODE;
+static const int TIMER_PERIOD_MS = 1;
 
 /*
  * Private Variables
  */
 
-static volatile MODE s_mode = MODE_OFF;
+static volatile UNIT_MODE s_mode = UNIT_MODE_OFF;
 static volatile bool s_timer_tick = false;
 
 static bool check_and_clear(volatile bool& flag)
@@ -114,33 +110,17 @@ static void display_intro(void)
     battery_leds_set_level(0);
 }
 
-static void setup_ports(void)
-{
-    // Port A initialization
-    DDRA = 0;//All pins are inputs
-    PORTA=(1<<PORTA7) | (1<<PORTA6) | (1<<PORTA5) | (1<<PORTA4) | (1<<PORTA3) | (1<<PORTA2) | (0<<PORTA1) | (0<<PORTA0);//Pullups for switches
-    
-    // PORT B initialisation
-    DDRB=0xff;//All of pins are outputs
-
-    // PORT C initialisation    
-    DDRC=0xff;//All of pins are outputs
-    
-    // PORT D initialisation
-    DDRD=0xff;//All of pins are outputs
-}
-
-static void setup_timers(void)
+static void timer_setup(void)
 {
 
     // Timer/Counter 2 initialization. This provides interrupts for all timing
-    // Clock: 15.625 kHz. Period: 9.984 ms with OCR2=0x9B.
+    // Clock: 125 kHz (F_CPU/8). Period: 1ms with OCR2=0x7D.
     // Mode: CTC top=OCR2A. Interrupt on compare match.
     // May need higher frequency interrupts if LED dimming is needed. Might even need more than 1MHz clock speed.
     ASSR=0<<AS2;
-    TCCR2=(0<<WGM20) | (0<<COM21) | (0<<COM20) | (1<<WGM21) | (1<<CS22) | (0<<CS21) | (0<<CS20);
+    TCCR2=(0<<WGM20) | (0<<COM21) | (0<<COM20) | (1<<WGM21) | (0<<CS22) | (1<<CS21) | (0<<CS20);
     TCNT2=0x00;
-    OCR2=0x9B;
+    OCR2=0x7D;
 
     // TCn Interrupt initialization
     TIMSK=(1<<OCIE2) | (0<<TOIE2) | (0<<TICIE1) | (0<<OCIE1A) | (0<<OCIE1B) | (0<<TOIE1) | (0<<OCIE0) | (0<<TOIE0);
@@ -149,13 +129,17 @@ static void setup_timers(void)
     sei();
 }
 
-static void display_voltage( uint8_t channel )
+static void display_voltage(uint8_t channel)
 {
-    setup_adc();
+    adc_setup();
     
-    uint8_t charge_state = battery_get_state(channel);
-
+    uint8_t charge_state = battery_update_state(channel);
+	bool is_charging = battery_get_charge_mode() != CHARGE_MODE_NOT_CHARGING;
+	bool flash_battery_low_led = !is_charging && (charge_state <= 1);
+	
     battery_leds_set_level(charge_state);
+	
+	battery_leds_set_flash(flash_battery_low_led);
 }
 
 static void allow_running( bool allow )
@@ -185,6 +169,8 @@ static void handle_on_mode()
     allow_running( switch_pressed(SWITCH_KEYFOB) );
 
     display_voltage(ADC_CHANNEL_BATTERY_VOLTAGE);
+	
+	speed_leds_set_level(speed_get_latest());
 }
 
 static void handle_charging()
@@ -200,27 +186,43 @@ static void handle_charging()
     display_voltage(ADC_CHANNEL_CHARGE_INPUT);
 }
 
-static MODE update_mode()
+static UNIT_MODE update_mode()
 {
     bool keyfob_inserted = switch_pressed(SWITCH_KEYFOB);
     bool charging = battery_get_charge_mode() > 0;
 
     if (keyfob_inserted)
     {
-        return charging ? MODE_CHARGING : MODE_ON;
+        return charging ? UNIT_MODE_CHARGING : UNIT_MODE_ON;
     }
     else
     {
-        return charging ? MODE_CHARGING : MODE_OFF;
+        return charging ? UNIT_MODE_CHARGING : UNIT_MODE_OFF;
     }   
 }
 
-int main(void)
+/*
+ * Public Functions
+ */
+
+UNIT_MODE controller_mode()
 {
+	return s_mode;
+}
+
+int main(void)
+{  
+	speed_leds_setup();
+	battery_leds_setup();
+
     display_intro();
-    setup_ports();
-    setup_timers();
-    setup_adc();
+
+	switch_setup();
+	battery_setup();
+	debug_setup();
+
+    timer_setup();
+    adc_setup();
     
     leds_off();
     
@@ -228,24 +230,28 @@ int main(void)
     {
         if (check_and_clear(s_timer_tick))
         {
-            switch_tick(10);
+			debug_tick(TIMER_PERIOD_MS);
+			
+            switch_tick(TIMER_PERIOD_MS);
 
-            battery_leds_tick(10);
+            battery_leds_tick(TIMER_PERIOD_MS);
             
-            battery_tick(10);
+            battery_tick(TIMER_PERIOD_MS);
+			
+			speed_sensor_tick(TIMER_PERIOD_MS);
         }
 
         s_mode = update_mode();
 
         switch(s_mode)
         {
-        case MODE_OFF:
+        case UNIT_MODE_OFF:
             handle_off_mode();
             break;
-        case MODE_ON:
+        case UNIT_MODE_ON:
             handle_on_mode();
             break;
-        case MODE_CHARGING:
+        case UNIT_MODE_CHARGING:
             handle_charging();
             break;
         }

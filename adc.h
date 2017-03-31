@@ -13,7 +13,7 @@
 #ifndef _ADC_H_
 #define _ADC_H_
 
-void setup_adc(void);
-uint16_t read_adc(uint8_t adc_input, uint8_t adc_vref);
+void adc_setup(void);
+uint16_t adc_read(uint8_t adc_input, uint8_t adc_vref);
 
 #endif

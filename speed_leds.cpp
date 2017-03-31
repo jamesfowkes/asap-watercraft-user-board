@@ -32,6 +32,7 @@
  * Defines, Typedefs, Constants
  */
 
+#define SPEED_LEDS_DDR DDRC
 #define SPEED_LEDS_PORT PORTC
 
 static const int SPEED_LED_ROW0 = (1<<0);
@@ -44,6 +45,11 @@ static const int SPEED_LED_MASK = 0x0F;
 /*
  * Public Functions
  */
+
+void speed_leds_setup()
+{
+	SPEED_LEDS_DDR |= ( SPEED_LED_ROW0 | SPEED_LED_ROW1 | SPEED_LED_ROW2 | SPEED_LED_ROW3 );
+}
 
 void speed_leds_set_level(uint8_t level)
 {
@@ -58,13 +64,15 @@ void speed_leds_set_level(uint8_t level)
 		SPEED_LEDS_PORT |= SPEED_LED_ROW0;			
 		break;
 	case 2:
-		SPEED_LEDS_PORT |= SPEED_LED_ROW0;
+		SPEED_LEDS_PORT |= SPEED_LED_ROW0 | SPEED_LED_ROW1;
 		break;
 	case 3:
-		SPEED_LEDS_PORT |= SPEED_LED_ROW0;
+		SPEED_LEDS_PORT |= SPEED_LED_ROW0 | SPEED_LED_ROW1 | SPEED_LED_ROW2;
 		break;
 	case 4:
-		SPEED_LEDS_PORT |= SPEED_LED_ROW0;
+	default:
+		SPEED_LEDS_PORT |= SPEED_LED_ROW0 | SPEED_LED_ROW1 | SPEED_LED_ROW2 | SPEED_LED_ROW3;
 		break;
+		
 	}
 }

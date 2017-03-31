@@ -1,5 +1,5 @@
 /*
- * controller.cpp
+ * controller.h
  *
  * James Fowkes (jamesfowkes@gmail.com)
  * for ASAP Watercrafts
@@ -21,6 +21,18 @@
 * Do not change anything below this line *
 *                                        *
 *****************************************/
+
+/*
+ * Defines, Typedefs, Constants
+ */
+
+enum unit_mode
+{
+    UNIT_MODE_OFF,
+    UNIT_MODE_ON,
+    UNIT_MODE_CHARGING
+};
+typedef enum unit_mode UNIT_MODE;
 
 #define ADCMAX 1023 //ADC output with input at 2.56V
 #define VREF 2.47
@@ -44,5 +56,12 @@
 #define ADC_VREF_INT ((1<<REFS0) | (1<<REFS1))//Internal 2.56V reference
 
 #define SPEED_STEPUP_DELAY 2	
+
+/*
+ * Public Functions
+ */
+
+UNIT_MODE controller_mode();
+void debug_tick(uint32_t tick_ms);
 
 #endif

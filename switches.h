@@ -21,6 +21,7 @@ enum switches
 };
 typedef enum switches SWITCHES;
 
+void switch_setup();
 void switch_tick(uint32_t tick_ms);
 void switch_update_states();
 

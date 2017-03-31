@@ -6,7 +6,7 @@
  *
  * Created March 2017
  * 
- * Modified from original file RTD-ASAP_Controller.h
+ * Modified from original file RTD-ASAP_Controller.c
  * by Rapid Technology Development ltd.
  */
 
@@ -31,26 +31,21 @@
 #include "adc.h"
 #include "battery.h"
 #include "switches.h"
-
+#include "util.h"
 
 /*
  * Defines, Typedefs, Constants
  */
 
-enum charge_mode
-{
-	MODE_NOT_CHARGING,
-	MODE_CHARGING,
-	MODE_TESTING_CHARGE_LEVEL
-};
-typedef enum charge_mode CHARGE_MODE;
+#define CHARGE_RECHECK_TIME_MS 60000 //The number of milliseconds to wait between checking the charger is still connected.
+#define INPUT_SETTLING_TIME_MS 150 //Number of ten millisecond interrupts to wait for charge input voltage to fall if the charger is not connected.
 
 /*
  * Private Variables
  */
 
 static uint8_t s_charge_state = 0;
-static CHARGE_MODE s_charge_mode = MODE_NOT_CHARGING;
+static CHARGE_MODE s_charge_mode = CHARGE_MODE_NOT_CHARGING;
 static uint16_t s_charge_input_voltage;
 static uint32_t s_timer;
 
@@ -73,12 +68,12 @@ static void start_settling_delay()
 
 static CHARGE_MODE handle_not_charging()
 {
-	CHARGE_MODE new_mode = MODE_NOT_CHARGING;
+	CHARGE_MODE new_mode = CHARGE_MODE_NOT_CHARGING;
 
 	if (s_charge_input_voltage > VOLTAGE1)
 	{
 		start_charging();
-		new_mode = MODE_CHARGING;
+		new_mode = CHARGE_MODE_CHARGING;
 	}
 
 	return new_mode;
@@ -86,12 +81,12 @@ static CHARGE_MODE handle_not_charging()
 
 static CHARGE_MODE handle_charging()
 {
-	CHARGE_MODE new_mode = MODE_CHARGING;
+	CHARGE_MODE new_mode = CHARGE_MODE_CHARGING;
 	if (s_timer == 0)
 	{
 		stop_charging();
 		start_settling_delay();
-		new_mode = MODE_TESTING_CHARGE_LEVEL;
+		new_mode = CHARGE_MODE_TESTING_CHARGE_LEVEL;
 	}
 
 	return new_mode;
@@ -99,18 +94,18 @@ static CHARGE_MODE handle_charging()
 
 static CHARGE_MODE handle_testing_charge_level()
 {
-	CHARGE_MODE new_mode = MODE_CHARGING;
+	CHARGE_MODE new_mode = CHARGE_MODE_CHARGING;
 	if (s_timer == 0)
 	{
 		//Measure if the charger is still connected.
 		if (s_charge_input_voltage > VOLTAGE1)
 		{
 			start_charging();
-			new_mode = MODE_CHARGING;
+			new_mode = CHARGE_MODE_CHARGING;
 		}
 		else
 		{
-			new_mode = MODE_NOT_CHARGING;
+			new_mode = CHARGE_MODE_NOT_CHARGING;
 		}
 	}
 	return new_mode;
@@ -120,10 +115,16 @@ static CHARGE_MODE handle_testing_charge_level()
  * Public Functions
  */
 
+void battery_setup() { /* No setup required */ }
 
-uint8_t battery_get_state(uint8_t channel)
+uint8_t battery_get_last_state()
 {
-	uint16_t voltage = read_adc( channel, ADC_VREF_INT) + (s_charge_state<<2);//This adds hysteresis
+	return s_charge_state;
+}
+
+uint8_t battery_update_state(uint8_t channel)
+{
+	uint16_t voltage = adc_read( channel, ADC_VREF_INT) + (s_charge_state<<2);//This adds hysteresis
 	if ( voltage < VOLTAGE1-2 ) { s_charge_state=0; }
 	if ( voltage > VOLTAGE1 ) { s_charge_state=1; }
 	if ( voltage > VOLTAGE2 ) { s_charge_state=2; }
@@ -139,28 +140,27 @@ uint8_t battery_get_state(uint8_t channel)
 
 uint8_t battery_get_charge_mode() { return s_charge_mode; }
 
-void battery_tick(uint32_t ms_tick)
+void battery_tick(uint32_t tick_ms)
 {
-	if (s_timer > ms_tick) { s_timer--; }
-	else if (s_timer > 0) { s_timer = 0; }
+	s_timer = subtract_not_below_zero(s_timer, tick_ms);
 }
 
 void battery_task()
 {
-	s_charge_input_voltage = read_adc(ADC_CHANNEL_CHARGE_INPUT, ADC_VREF_INT);
+	s_charge_input_voltage = adc_read(ADC_CHANNEL_CHARGE_INPUT, ADC_VREF_INT);
 
 	switch(s_charge_mode)
 	{
 
-	case MODE_NOT_CHARGING:
+	case CHARGE_MODE_NOT_CHARGING:
 		s_charge_mode = handle_not_charging();
 		break;
 
-	case MODE_CHARGING:
+	case CHARGE_MODE_CHARGING:
 		s_charge_mode = handle_charging();
 		break;
 
-	case MODE_TESTING_CHARGE_LEVEL:
+	case CHARGE_MODE_TESTING_CHARGE_LEVEL:
 		s_charge_mode = handle_testing_charge_level();
 		break;
 	}

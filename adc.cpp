@@ -1,5 +1,5 @@
 /*
- * switches,cpp
+ * adc.cpp
  *
  * James Fowkes (jamesfowkes@gmail.com)
  * for ASAP Watercrafts
@@ -28,13 +28,12 @@
  * Public Functions
  */
 
-void setup_adc(void)
+void adc_setup(void)
 {
 	ADCSRA=(1<<ADEN) | (0<<ADSC) | (0<<ADATE) | (0<<ADIF) | (0<<ADIE) | (0<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
 }
 
-
-uint16_t read_adc(uint8_t adc_input, uint8_t adc_vref)
+uint16_t adc_read(uint8_t adc_input, uint8_t adc_vref)
 {
 	ADMUX=adc_input | adc_vref;
 	// Delay needed for the stabilization of the ADC input voltage
