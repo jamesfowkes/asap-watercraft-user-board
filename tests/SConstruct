@@ -1,0 +1,23 @@
+import os
+import logging
+
+env = Environment(ENV=os.environ)
+
+logging.basicConfig(level=logging.INFO)
+
+env['CPPPATH'] = [".", "#../"]
+env['CPPDEFINES'] = ["TEST_HARNESS"]
+env['CPPFLAGS'] = ["-Wall", "-Wextra", "-g"]
+env['CPPINCLUDES'] = []
+
+for target in COMMAND_LINE_TARGETS:
+
+	test_object_paths = ["{}.test.cpp".format(target), "../{}.cpp".format(target), "../util.cpp"]
+
+	test_objects = [env.Object(test_object_path) for test_object_path in test_object_paths]
+	test_objects += env.Glob("mocks/*.cpp",)
+
+	program = env.Program(test_objects, LIBS=['cppunit'], CC='g++')
+
+	test_alias = env.Alias(target, [program], "./"+program[0].path)
+	env.AlwaysBuild(test_alias)

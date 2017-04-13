@@ -11,12 +11,6 @@
  */
 
 /*
- * AVR Includes
- */
-
-#include <avr/io.h>
-
-/*
  * C standard library Includes
  */
 
@@ -70,7 +64,7 @@ static CHARGE_MODE handle_not_charging()
 {
 	CHARGE_MODE new_mode = CHARGE_MODE_NOT_CHARGING;
 
-	if (s_charge_input_voltage > VOLTAGE1)
+	if (s_charge_input_voltage > LEVELS[0])
 	{
 		start_charging();
 		new_mode = CHARGE_MODE_CHARGING;
@@ -98,7 +92,7 @@ static CHARGE_MODE handle_testing_charge_level()
 	if (s_timer == 0)
 	{
 		//Measure if the charger is still connected.
-		if (s_charge_input_voltage > VOLTAGE1)
+		if (s_charge_input_voltage > LEVELS[0])
 		{
 			start_charging();
 			new_mode = CHARGE_MODE_CHARGING;
@@ -109,6 +103,33 @@ static CHARGE_MODE handle_testing_charge_level()
 		}
 	}
 	return new_mode;
+}
+
+static uint16_t get_high_level_transition(uint8_t state)
+{
+	if (state == 7) { return UINT16_MAX; }
+
+	return LEVELS[state + 1] + HYSTERESIS[state + 1];
+}
+
+static uint16_t get_low_level_transition(uint8_t state)
+{
+	if (state == 0) { return 0; }
+
+	return LEVELS[state - 1] + HYSTERESIS[state - 1];
+}
+
+static uint8_t adc_read_to_charge_state(uint16_t adc_read)
+{
+	if (adc_read > LEVELS[7]) { return 7; }
+	if (adc_read > LEVELS[6]) { return 6; }
+	if (adc_read > LEVELS[5]) { return 5; }
+	if (adc_read > LEVELS[4]) { return 4; }
+	if (adc_read > LEVELS[3]) { return 3; }
+	if (adc_read > LEVELS[2]) { return 2; }
+	if (adc_read > LEVELS[1]) { return 1; }
+	
+	return 0;
 }
 
 /*
@@ -124,17 +145,18 @@ uint8_t battery_get_last_state()
 
 uint8_t battery_update_state(uint8_t channel)
 {
-	uint16_t voltage = adc_read( channel, ADC_VREF_INT) + (s_charge_state<<2);//This adds hysteresis
-	if ( voltage < VOLTAGE1-2 ) { s_charge_state=0; }
-	if ( voltage > VOLTAGE1 ) { s_charge_state=1; }
-	if ( voltage > VOLTAGE2 ) { s_charge_state=2; }
-	if ( voltage > VOLTAGE3 ) { s_charge_state=3; }
-	if ( voltage > VOLTAGE4 ) { s_charge_state=4; }
-	if ( voltage > VOLTAGE5 ) { s_charge_state=5; }
-	if ( voltage > VOLTAGE6 ) { s_charge_state=6; }
-	if ( voltage > VOLTAGE7 ) { s_charge_state=7; }
-	if ( voltage > VOLTAGE8 ) { s_charge_state=8; }
+	uint16_t adc_reading = adc_read(channel);
 
+	// Get the levels for transitioning out of this charge state,
+	uint16_t high_transisition_level = get_high_level_transition(s_charge_state);
+	uint16_t low_transisition_level = get_low_level_transition(s_charge_state);
+
+	// Move to new state if outside levels
+	if ((adc_reading > high_transisition_level) || (adc_reading < low_transisition_level))
+	{
+		s_charge_state = adc_read_to_charge_state(adc_reading);
+	}
+	
 	return s_charge_state;
 }
 
@@ -147,7 +169,7 @@ void battery_tick(uint32_t tick_ms)
 
 void battery_task()
 {
-	s_charge_input_voltage = adc_read(ADC_CHANNEL_CHARGE_INPUT, ADC_VREF_INT);
+	s_charge_input_voltage = adc_read(ADC_CHANNEL_CHARGE_INPUT);
 
 	switch(s_charge_mode)
 	{

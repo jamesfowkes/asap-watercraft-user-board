@@ -14,6 +14,6 @@
 #define _ADC_H_
 
 void adc_setup(void);
-uint16_t adc_read(uint8_t adc_input, uint8_t adc_vref);
+uint16_t adc_read(uint8_t adc_input);
 
 #endif
