@@ -38,7 +38,7 @@ typedef enum unit_mode UNIT_MODE;
 #define VREF 2.47
 #define DIVIDER 0.03508
 #define SCALING_FACTOR ( (DIVIDER*ADCMAX)/VREF )
-#define VADJ(x) ((x*101)/100)
+#define VADJ(x) (((uint32_t)x*101U)/100U)
 
 #define POWER_CONTROL_PIN (1 << 0);
 

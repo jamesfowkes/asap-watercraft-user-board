@@ -27,16 +27,17 @@ typedef enum charge_mode CHARGE_MODE;
 
 static const uint16_t LEVELS[] = {
 	VADJ(245),
-	VADJ(250),
-	VADJ(258),
-	VADJ(268),
-	VADJ(282),
-	VADJ(295),
-	VADJ(322),
-	VADJ(340)
+	VADJ(249),
+	VADJ(255),
+	VADJ(263),
+	VADJ(273),
+	VADJ(285),
+	VADJ(300),
+	VADJ(318),
+	VADJ(339)
 };
 
-static const uint8_t HYSTERESIS[] = {0, 2, 4, 6, 8, 10, 12, 14};
+static const uint8_t HYSTERESIS[] = {0, 2, 4, 6, 8, 10, 12, 14, 16};
 
 /*
  * Public Functions

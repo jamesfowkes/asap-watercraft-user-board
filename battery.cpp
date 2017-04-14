@@ -14,6 +14,7 @@
  * C standard library Includes
  */
 
+#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -107,7 +108,7 @@ static CHARGE_MODE handle_testing_charge_level()
 
 static uint16_t get_high_level_transition(uint8_t state)
 {
-	if (state == 7) { return UINT16_MAX; }
+	if (state == 8) { return UINT16_MAX; }
 
 	return LEVELS[state + 1] + HYSTERESIS[state + 1];
 }
@@ -116,11 +117,12 @@ static uint16_t get_low_level_transition(uint8_t state)
 {
 	if (state == 0) { return 0; }
 
-	return LEVELS[state - 1] + HYSTERESIS[state - 1];
+	return LEVELS[state] - HYSTERESIS[state];
 }
 
 static uint8_t adc_read_to_charge_state(uint16_t adc_read)
 {
+	if (adc_read > LEVELS[8]) { return 8; }
 	if (adc_read > LEVELS[7]) { return 7; }
 	if (adc_read > LEVELS[6]) { return 6; }
 	if (adc_read > LEVELS[5]) { return 5; }
