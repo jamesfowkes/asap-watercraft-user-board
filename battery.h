@@ -48,7 +48,6 @@ void battery_task();
 void battery_tick(uint32_t tick_ms);
 
 uint8_t battery_get_charge_mode();
-uint8_t battery_get_last_state();
-uint8_t battery_update_state(uint8_t channel);
+uint8_t battery_get_last_state(uint8_t channel);
 
 #endif

@@ -131,7 +131,7 @@ static void build_debug_string(char * s)
 	i += add_separator(s+i, '\t');
 	
 	i += copy_header(s+i, s_debug_batt_field);
-	s[i++] = battery_get_last_state() + '0';
+	s[i++] = battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE) + '0';
 	i += add_separator(s+i, '\t');
 	
 	i += copy_header(s+i, s_debug_charge_field);

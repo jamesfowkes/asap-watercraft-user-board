@@ -53,6 +53,11 @@ static const int TIMER_PERIOD_MS = 1;
 static volatile UNIT_MODE s_mode = UNIT_MODE_OFF;
 static volatile bool s_timer_tick = false;
 
+static void power_control_setup()
+{
+    DDRB |= POWER_CONTROL_PIN;
+}
+
 static bool check_and_clear(volatile bool& flag)
 {
     bool val = flag;
@@ -133,7 +138,7 @@ static void display_voltage(uint8_t channel)
 {
     adc_setup();
     
-    uint8_t charge_state = battery_update_state(channel);
+    uint8_t charge_state = battery_get_last_state(channel);
 	bool is_charging = battery_get_charge_mode() != CHARGE_MODE_NOT_CHARGING;
 	bool flash_battery_low_led = !is_charging && (charge_state <= 1);
 	
@@ -142,7 +147,7 @@ static void display_voltage(uint8_t channel)
 	battery_leds_set_flash(flash_battery_low_led);
 }
 
-static void allow_running( bool allow )
+static void power_control_allow_running( bool allow )
 {
     if (allow)
     {
@@ -166,7 +171,7 @@ static void handle_on_mode()
         display_intro();
     }
 
-    allow_running( switch_pressed(SWITCH_KEYFOB) );
+    power_control_allow_running( switch_pressed(SWITCH_KEYFOB) );
 
     display_voltage(ADC_CHANNEL_BATTERY_VOLTAGE);
 	
@@ -182,7 +187,7 @@ static void handle_charging()
 
     speed_leds_set_level(1);
 
-    allow_running( switch_pressed(SWITCH_KEYFOB) );
+    power_control_allow_running( switch_pressed(SWITCH_KEYFOB) );
     display_voltage(ADC_CHANNEL_CHARGE_INPUT);
 }
 
@@ -224,6 +229,8 @@ int main(void)
     timer_setup();
     adc_setup();
     
+    power_control_setup();
+
     leds_off();
     
     while(true)
