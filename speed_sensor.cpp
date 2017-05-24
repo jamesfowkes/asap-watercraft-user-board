@@ -42,7 +42,7 @@ static const int PWM_PERIOD = 100;
 static const int NUMBER_OF_SAMPLING_PERIODS = 2;
 static const int SAMPLING_PERIOD = PWM_PERIOD * NUMBER_OF_SAMPLING_PERIODS;
 
-static const int NUMBER_OF_SPEED_VALUES = 5;
+static const int NUMBER_OF_SPEED_VALUES = 4;
 static const int SPEED_RANGE = 100 / NUMBER_OF_SPEED_VALUES;
 
 static const int THRESHOLD = 5;
