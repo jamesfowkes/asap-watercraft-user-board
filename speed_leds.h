@@ -3,5 +3,7 @@
 
 void speed_leds_setup();
 void speed_leds_set_level(uint8_t level);
+void speed_leds_start_blink();
+void speed_leds_tick(uint32_t tick_ms);
 
 #endif

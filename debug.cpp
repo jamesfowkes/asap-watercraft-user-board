@@ -35,9 +35,9 @@
  * Defines, Typedefs, Constants
  */
 
-#define SERIAL_TX_DDR (DDRA)
-#define SERIAL_TX_PORT (PORTA)
-#define SERIAL_TX_PIN (2)
+#define SERIAL_TX_DDR (DDRB)
+#define SERIAL_TX_PORT (PORTB)
+#define SERIAL_TX_PIN (6)
 
 #define SERIAL_TX_BAUD (9600)
 #define SERIAL_TX_BIT_DELAY (((F_CPU / SERIAL_TX_BAUD ) / 4) - 3)

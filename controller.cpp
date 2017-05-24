@@ -53,6 +53,8 @@ static const int TIMER_PERIOD_MS = 1;
 static volatile UNIT_MODE s_mode = UNIT_MODE_OFF;
 static volatile bool s_timer_tick = false;
 
+static bool s_flood_flag = false;
+
 static void power_control_setup()
 {
     DDRB |= POWER_CONTROL_PIN;
@@ -192,8 +194,19 @@ static void handle_charging()
     display_voltage(ADC_CHANNEL_CHARGE_INPUT);
 }
 
+static void handle_flooded()
+{
+    s_flood_flag = switch_not_pressed(SWITCH_FLOODSENSOR);
+
+    power_control_allow_running(false);
+
+    speed_leds_start_blink();
+}
+
 static UNIT_MODE update_mode()
 {
+    if (s_flood_flag) { return UNIT_MODE_FLOOD; }
+
     bool keyfob_inserted = switch_pressed(SWITCH_KEYFOB);
     bool charging = battery_get_charge_mode() > 0;
 
@@ -247,8 +260,11 @@ int main(void)
             battery_tick(TIMER_PERIOD_MS);
 			
 			speed_sensor_tick(TIMER_PERIOD_MS);
+
+            speed_leds_tick(TIMER_PERIOD_MS);
         }
 
+        s_flood_flag = switch_not_pressed(SWITCH_FLOODSENSOR);
         s_mode = update_mode();
 
         switch(s_mode)
@@ -261,6 +277,9 @@ int main(void)
             break;
         case UNIT_MODE_CHARGING:
             handle_charging();
+            break;
+        case UNIT_MODE_FLOOD:
+            handle_flooded();
             break;
         }
     }

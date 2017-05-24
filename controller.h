@@ -30,7 +30,8 @@ enum unit_mode
 {
     UNIT_MODE_OFF,
     UNIT_MODE_ON,
-    UNIT_MODE_CHARGING
+    UNIT_MODE_CHARGING,
+    UNIT_MODE_FLOOD
 };
 typedef enum unit_mode UNIT_MODE;
 
