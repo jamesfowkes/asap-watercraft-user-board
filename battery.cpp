@@ -141,11 +141,11 @@ static uint8_t update_state(uint8_t channel)
 	uint16_t adc_reading = adc_read(channel);
 
 	// Get the levels for transitioning out of this charge state,
-	//uint16_t high_transition_level = get_high_level_transition(s_battery_states[channel]);
-	//uint16_t low_transition_level = get_low_level_transition(s_battery_states[channel]);
+	uint16_t high_transition_level = get_high_level_transition(s_battery_states[channel]);
+	uint16_t low_transition_level = get_low_level_transition(s_battery_states[channel]);
 
 	// Move to new state if outside levels
-	//if ((adc_reading > high_transition_level) || (adc_reading < low_transition_level))
+	if ((adc_reading > high_transition_level) || (adc_reading < low_transition_level))
 	{
 		s_battery_states[channel] = adc_read_to_charge_state(adc_reading);
 	}
