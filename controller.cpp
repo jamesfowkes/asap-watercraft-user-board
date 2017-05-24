@@ -162,6 +162,7 @@ static void power_control_allow_running( bool allow )
 static void handle_off_mode()
 {
     leds_off();
+    power_control_allow_running( switch_pressed(SWITCH_KEYFOB) );
 }
 
 static void handle_on_mode()
