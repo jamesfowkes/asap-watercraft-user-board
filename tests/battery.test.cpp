@@ -39,30 +39,30 @@ class BatteryTest : public CppUnit::TestFixture  {
 	{
 		uint16_t transition_level = LEVELS[old_state+1]+HYSTERESIS[old_state+1];
 		adc_mock_set(0, transition_level);
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
-		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state());
+		battery_tick(UINT32_MAX);
+		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(0));
 
 		adc_mock_set(0, transition_level+1);
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
-		CPPUNIT_ASSERT_EQUAL(old_state+1, (int)battery_get_last_state());
+		battery_tick(UINT32_MAX);
+		CPPUNIT_ASSERT_EQUAL(old_state+1, (int)battery_get_last_state(0));
 	}
 
 	void TestHysteresisAppliedFalling(uint8_t old_state)
 	{
-		uint16_t transition_level = LEVELS[old_state-1]+HYSTERESIS[old_state-1];
+		uint16_t transition_level = LEVELS[old_state]-HYSTERESIS[old_state];
 		adc_mock_set(0, transition_level);
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
-		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state());
+		battery_tick(UINT32_MAX);
+		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(0));
 
 		adc_mock_set(0, transition_level-1);
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
-		CPPUNIT_ASSERT_EQUAL(old_state-1, (int)battery_get_last_state());
+		battery_tick(UINT32_MAX);
+		CPPUNIT_ASSERT_EQUAL(old_state-1, (int)battery_get_last_state(0));
 	}
 
 	void TestHystersisAppliedToVoltageRising()
 	{
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
-		CPPUNIT_ASSERT_EQUAL(0, (int)battery_get_last_state());
+		battery_tick(UINT32_MAX);
+		CPPUNIT_ASSERT_EQUAL(0, (int)battery_get_last_state(0));
 
 		TestHysteresisAppliedRising(0);
 		TestHysteresisAppliedRising(1);
@@ -76,9 +76,9 @@ class BatteryTest : public CppUnit::TestFixture  {
 	void TestHystersisAppliedToVoltageFalling()
 	{
 		adc_mock_set(0, LEVELS[7] + HYSTERESIS[7]);
-		battery_update_state(ADC_CHANNEL_CHARGE_INPUT);
+		battery_tick(UINT32_MAX);
 
-		CPPUNIT_ASSERT_EQUAL(7, (int)battery_get_last_state());
+		CPPUNIT_ASSERT_EQUAL(7, (int)battery_get_last_state(0));
 
 		TestHysteresisAppliedFalling(7);
 		TestHysteresisAppliedFalling(6);
