@@ -40,8 +40,8 @@
 #define SWITCH_PORT PORTA
 #define SWITCH_PIN PINA
 
-#define SWITCH_LEFT_MASK (1<<2)
-#define SWITCH_RIGHT_MASK (1<<3)
+#define SWITCH_LEFT_MASK (1<<3)
+#define SWITCH_RIGHT_MASK (1<<5)
 #define SWITCH_KEYFOB_MASK (1<<7)
 #define SWITCH_MAGSWITCH2_MASK (1<<6)
 
