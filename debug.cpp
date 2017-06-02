@@ -124,6 +124,7 @@ static void build_debug_string(char * s)
 	s[i++] = switch_pressed(SWITCH_LEFT) ? '1' : '0';
 	s[i++] = switch_pressed(SWITCH_RIGHT) ? '1' : '0';
 	s[i++] = switch_pressed(SWITCH_KEYFOB) ? '1' : '0';
+	s[i++] = switch_pressed(SWITCH_FLOODSENSOR) ? '1' : '0';
 	i += add_separator(s+i, '\t');
 	
 	i += copy_header(s+i, s_debug_speed_field);

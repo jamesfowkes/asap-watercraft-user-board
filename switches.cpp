@@ -107,7 +107,7 @@ static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
 
 void switch_setup()
 {
-	SWITCH_PORT |= (SWITCH_LEFT_MASK | SWITCH_RIGHT_MASK | SWITCH_KEYFOB_MASK | SWITCH_MAGSWITCH2_MASK);
+	SWITCH_PORT |= (SWITCH_LEFT_MASK | SWITCH_RIGHT_MASK | SWITCH_KEYFOB_MASK | SWITCH_MAGSWITCH2_MASK | SWITCH_FLOODSENSE_MASK);
 }
 
 void switch_tick(uint32_t tick_ms)
