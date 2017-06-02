@@ -164,6 +164,7 @@ static void power_control_allow_running( bool allow )
 static void handle_off_mode()
 {
     leds_off();
+    speed_leds_blink(false);
     power_control_allow_running( switch_pressed(SWITCH_KEYFOB) );
 }
 
@@ -178,6 +179,7 @@ static void handle_on_mode()
 
     display_voltage(ADC_CHANNEL_BATTERY_VOLTAGE);
 	
+    speed_leds_blink(false);
 	speed_leds_set_level(speed_get_latest());
 }
 
@@ -188,6 +190,7 @@ static void handle_charging()
         display_intro();
     }
 
+    speed_leds_blink(false);
     speed_leds_set_level(1);
 
     power_control_allow_running( switch_pressed(SWITCH_KEYFOB) );
@@ -200,7 +203,7 @@ static void handle_flooded()
 
     power_control_allow_running(false);
 
-    speed_leds_start_blink();
+    speed_leds_blink(true);
 }
 
 static UNIT_MODE update_mode()

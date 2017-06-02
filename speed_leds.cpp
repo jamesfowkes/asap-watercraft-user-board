@@ -64,8 +64,6 @@ void speed_leds_setup()
 
 void speed_leds_set_level(uint8_t level)
 {
-	s_blink = false;
-
 	SPEED_LEDS_PORT &= ~SPEED_LED_MASK;
 
 	switch(level)
@@ -89,19 +87,22 @@ void speed_leds_set_level(uint8_t level)
 	}
 }
 
-void speed_leds_start_blink()
+void speed_leds_blink(bool blink)
 {
-	s_blink = true;
+	s_blink = blink;
 }
 
 void speed_leds_tick(uint32_t tick_ms)
 {
-	s_blink_timer = subtract_not_below_zero(s_blink_timer, tick_ms);
-	
-	if (s_blink_timer == 0)
+	if (s_blink)
 	{
-		speed_leds_set_level(s_blink_state ? 4 : 0);
-		s_blink_state = !s_blink_state;
-		s_blink_timer = BLINK_PERIOD;
+		s_blink_timer = subtract_not_below_zero(s_blink_timer, tick_ms);
+		
+		if (s_blink_timer == 0)
+		{
+			speed_leds_set_level(s_blink_state ? 4 : 0);
+			s_blink_state = !s_blink_state;
+			s_blink_timer = BLINK_PERIOD;
+		}
 	}
 }
