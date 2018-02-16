@@ -20,21 +20,20 @@
 enum charge_mode
 {
 	CHARGE_MODE_NOT_CHARGING,
-	CHARGE_MODE_CHARGING,
-	CHARGE_MODE_TESTING_CHARGE_LEVEL
+	CHARGE_MODE_CHARGING
 };
 typedef enum charge_mode CHARGE_MODE;
 
 static const uint16_t LEVELS[] = {
-	VADJ(245),
-	VADJ(249),
-	VADJ(255),
-	VADJ(263),
-	VADJ(273),
-	VADJ(285),
-	VADJ(300),
-	VADJ(318),
-	VADJ(339)
+	511,
+	519,
+	536,
+	561,
+	592,
+	628,
+	670,
+	716,
+	767
 };
 
 static const uint8_t HYSTERESIS[] = {0, 2, 4, 6, 8, 10, 12, 14, 16};
@@ -44,10 +43,9 @@ static const uint8_t HYSTERESIS[] = {0, 2, 4, 6, 8, 10, 12, 14, 16};
  */
 
 void battery_setup();
-void battery_task();
 void battery_tick(uint32_t tick_ms);
 
-uint8_t battery_get_charge_mode();
-uint8_t battery_get_last_state(uint8_t channel);
+bool battery_is_charging();
+uint8_t battery_get_last_state(ADC_CHANNEL_ENUM channel);
 
 #endif

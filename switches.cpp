@@ -37,40 +37,59 @@
 
 #define DEBOUNCE_MS 50 // Debounce time in ms
 
-#define SWITCH_PORT PORTA
-#define SWITCH_PIN PINA
+#define SWITCH_THROTTLES_PORT PORTB
+#define SWITCH_THROTTLES_PINS PINB
+#define SWITCH_LEFT_MASK (1<<0)
+#define SWITCH_RIGHT_MASK (1<<1)
 
-#define SWITCH_LEFT_MASK (1<<3)
-#define SWITCH_RIGHT_MASK (1<<5)
+#define SWITCH_MAGSWITCH_PORT PORTA
+#define SWITCH_MAGSWITCH_PINS PINA
+#define SWITCH_MAGSWITCH1_MASK (1<<6)
+#define SWITCH_MAGSWITCH2_MASK (1<<7)
 #define SWITCH_KEYFOB_MASK (1<<7)
-#define SWITCH_MAGSWITCH2_MASK (1<<6)
-#define SWITCH_FLOODSENSE_MASK (1<<2)
+
+#define SWITCH_FLOODSENSE_PORT PORTB
+#define SWITCH_FLOODSENSE_PINS PINB
+#define SWITCH_FLOODSENSE_MASK (1<<3)
 
 #define NUMBER_OF_SWITCHES (5)
-
-static const uint8_t SWITCH_MASKS[NUMBER_OF_SWITCHES] = {
-	SWITCH_LEFT_MASK, SWITCH_RIGHT_MASK, SWITCH_KEYFOB_MASK, SWITCH_MAGSWITCH2_MASK, SWITCH_FLOODSENSE_MASK
-};
 
 struct debouncer
 {
 	volatile bool pressed, justpressed, justreleased;
 	volatile unsigned char previousstate, currentstate;
-	volatile uint32_t timer;
+	volatile uint16_t timer;
 };
 typedef struct debouncer DEBOUNCER;
+
+struct _switch
+{
+	volatile uint8_t * port;
+	volatile uint8_t * pins;
+	uint8_t mask;
+	bool invert;
+};
+typedef struct _switch SWITCH;
 
 /*
  * Private Variables
  */
 
-static DEBOUNCER s_switches[NUMBER_OF_SWITCHES];
+static const SWITCH s_switches[NUMBER_OF_SWITCHES] = {
+	{&SWITCH_THROTTLES_PORT, &SWITCH_THROTTLES_PINS, SWITCH_LEFT_MASK, false},
+	{&SWITCH_THROTTLES_PORT, &SWITCH_THROTTLES_PINS, SWITCH_RIGHT_MASK, false},
+	{&SWITCH_MAGSWITCH_PORT, &SWITCH_MAGSWITCH_PINS, SWITCH_MAGSWITCH1_MASK, false},
+	{&SWITCH_MAGSWITCH_PORT, &SWITCH_MAGSWITCH_PINS, SWITCH_MAGSWITCH2_MASK, false},
+	{&SWITCH_FLOODSENSE_PORT, &SWITCH_FLOODSENSE_PINS, SWITCH_FLOODSENSE_MASK, true}
+};
+
+static DEBOUNCER s_debouncers[NUMBER_OF_SWITCHES];
 
 /*
  * Private Functions
  */
 
-static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
+static void update_switch(DEBOUNCER& sw, bool state, uint16_t tick_ms)
 {
 	sw.justpressed  = 0;
 	sw.justreleased = 0;
@@ -81,7 +100,7 @@ static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
 	{
 		sw.timer = DEBOUNCE_MS; // Start the delay again
 
-		sw.currentstate  =  SWITCH_PIN & mask;   // read the button, all switches are on PINA.
+		sw.currentstate = state;   // read the button, all switches are on PINA.
 
 		if (sw.currentstate == sw.previousstate)
 		{
@@ -107,20 +126,26 @@ static void update_switch(DEBOUNCER& sw, uint8_t mask, uint32_t tick_ms)
 
 void switch_setup()
 {
-	SWITCH_PORT |= (SWITCH_LEFT_MASK | SWITCH_RIGHT_MASK | SWITCH_KEYFOB_MASK | SWITCH_MAGSWITCH2_MASK | SWITCH_FLOODSENSE_MASK);
+	uint8_t sw;
+
+	for( sw = 0; sw < NUMBER_OF_SWITCHES; sw++)
+	{
+		*(s_switches[sw].port) |= s_switches[sw].mask;	
+	}
 }
 
 void switch_tick(uint32_t tick_ms)
 {
 	uint8_t sw;
 
-	for( sw = 0; sw < NUMBER_OF_SWITCHES; sw++) // Loop through our array of Button structures 
+	for( sw = 0; sw < NUMBER_OF_SWITCHES; sw++)
 	{
-		update_switch(s_switches[sw], SWITCH_MASKS[sw], tick_ms);
+		bool state = *(s_switches[sw].pins) & s_switches[sw].mask;
+		update_switch(s_debouncers[sw], state ^ s_switches[sw].invert, tick_ms);
 	}
 }
 
-bool switch_pressed(SWITCHES sw) { return s_switches[sw].pressed; }
-bool switch_not_pressed(SWITCHES sw) { return !s_switches[sw].pressed; }
-bool switch_just_pressed(SWITCHES sw) { return s_switches[sw].justpressed; }
-bool switch_just_released(SWITCHES sw) { return s_switches[sw].justreleased; }
+bool switch_pressed(SWITCHES sw) { return s_debouncers[sw].pressed; }
+bool switch_not_pressed(SWITCHES sw) { return !s_debouncers[sw].pressed; }
+bool switch_just_pressed(SWITCHES sw) { return s_debouncers[sw].justpressed; }
+bool switch_just_released(SWITCHES sw) { return s_debouncers[sw].justreleased; }

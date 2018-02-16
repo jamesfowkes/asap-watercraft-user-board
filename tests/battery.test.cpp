@@ -24,7 +24,9 @@
  * Required Mock Functions
  */
 
-extern void adc_mock_set(uint8_t adc_input, uint16_t value);
+extern void adc_mock_set(ADC_CHANNEL_ENUM adc_input, uint16_t value);
+
+bool in_debug_mode() { return false; }
 
 class BatteryTest : public CppUnit::TestFixture  {
 
@@ -38,31 +40,31 @@ class BatteryTest : public CppUnit::TestFixture  {
 	void TestHysteresisAppliedRising(uint8_t old_state)
 	{
 		uint16_t transition_level = LEVELS[old_state+1]+HYSTERESIS[old_state+1];
-		adc_mock_set(0, transition_level);
+		adc_mock_set(ADC_CHANNEL_BATTERY_VOLTAGE, transition_level);
 		battery_tick(UINT32_MAX);
-		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 
-		adc_mock_set(0, transition_level+1);
+		adc_mock_set(ADC_CHANNEL_BATTERY_VOLTAGE, transition_level+1);
 		battery_tick(UINT32_MAX);
-		CPPUNIT_ASSERT_EQUAL(old_state+1, (int)battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(old_state+1, (int)battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 	}
 
 	void TestHysteresisAppliedFalling(uint8_t old_state)
 	{
 		uint16_t transition_level = LEVELS[old_state]-HYSTERESIS[old_state];
-		adc_mock_set(0, transition_level);
+		adc_mock_set(ADC_CHANNEL_BATTERY_VOLTAGE, transition_level);
 		battery_tick(UINT32_MAX);
-		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(old_state, battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 
-		adc_mock_set(0, transition_level-1);
+		adc_mock_set(ADC_CHANNEL_BATTERY_VOLTAGE, transition_level-1);
 		battery_tick(UINT32_MAX);
-		CPPUNIT_ASSERT_EQUAL(old_state-1, (int)battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(old_state-1, (int)battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 	}
 
 	void TestHystersisAppliedToVoltageRising()
 	{
 		battery_tick(UINT32_MAX);
-		CPPUNIT_ASSERT_EQUAL(0, (int)battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(0, (int)battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 
 		TestHysteresisAppliedRising(0);
 		TestHysteresisAppliedRising(1);
@@ -75,10 +77,10 @@ class BatteryTest : public CppUnit::TestFixture  {
 
 	void TestHystersisAppliedToVoltageFalling()
 	{
-		adc_mock_set(0, LEVELS[7] + HYSTERESIS[7]);
+		adc_mock_set(ADC_CHANNEL_BATTERY_VOLTAGE, LEVELS[7] + HYSTERESIS[7]);
 		battery_tick(UINT32_MAX);
 
-		CPPUNIT_ASSERT_EQUAL(7, (int)battery_get_last_state(0));
+		CPPUNIT_ASSERT_EQUAL(7, (int)battery_get_last_state(ADC_CHANNEL_BATTERY_VOLTAGE));
 
 		TestHysteresisAppliedFalling(7);
 		TestHysteresisAppliedFalling(6);

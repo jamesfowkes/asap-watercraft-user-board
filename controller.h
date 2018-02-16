@@ -35,18 +35,12 @@ enum unit_mode
 };
 typedef enum unit_mode UNIT_MODE;
 
-#define ADCMAX 1023 //ADC output with input at 2.56V
-#define VREF 2.47
-#define DIVIDER 0.03508
-#define SCALING_FACTOR ( (DIVIDER*ADCMAX)/VREF )
-#define VADJ(x) (((uint32_t)x*101U)/100U)
-
-#define POWER_CONTROL_PIN (1 << 0);
-
-#define ADC_CHANNEL_BATTERY_VOLTAGE 1
-#define ADC_CHANNEL_CHARGE_INPUT 0
-
-#define SPEED_STEPUP_DELAY 2	
+enum adc_channel
+{
+	ADC_CHANNEL_BATTERY_VOLTAGE,
+	ADC_CHANNEL_CHARGE_INPUT
+};
+typedef enum adc_channel ADC_CHANNEL_ENUM;
 
 /*
  * Public Functions

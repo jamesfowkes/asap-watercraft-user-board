@@ -14,6 +14,7 @@
 #define _ADC_H_
 
 void adc_setup(void);
-uint16_t adc_read(uint8_t adc_input);
+uint16_t adc_read(ADC_CHANNEL_ENUM channel);
+uint16_t adc_get_last(ADC_CHANNEL_ENUM channel);
 
 #endif

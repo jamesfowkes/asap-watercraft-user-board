@@ -45,6 +45,10 @@ static const int SPEED_LED_ROW3 = (1<<3);
 
 static const int SPEED_LED_MASK = 0x0F;
 
+#define SPEED_LED_PWM_DDR DDRD
+#define SPEED_LED_PWM_PORT PORTD
+#define SPEED_LED_PWM_PIN (4)
+
 /*
  * Private Variables
  */
@@ -60,6 +64,32 @@ static bool s_blink_state = false;
 void speed_leds_setup()
 {
 	SPEED_LEDS_DDR |= ( SPEED_LED_ROW0 | SPEED_LED_ROW1 | SPEED_LED_ROW2 | SPEED_LED_ROW3 );
+	SPEED_LED_PWM_DDR |= (1 << SPEED_LED_PWM_PIN);
+
+	// Timer/Counter 1 initialization.
+    TCCR1A = (
+    	  (0 << COM1A1) | (0 << COM1A0) // Channel A not used
+    	| (1 << COM1B1) | (1 << COM1B0) // Channel B in set-on-compare-match, clear at TOP mode
+    	| (0 << FOC1A) | (0 << FOC1B) // Clear force output compare bits
+    	| (0 << WGM11) | (1 << WGM10) // 8-bit PWM node (lower 2 bits)
+    );
+
+    TCCR1B = (
+    	  (1<<WGM12) // 8-bit PWM mode (upper bit)
+    	| (0 << CS12) | (1 << CS11) | (1 << CS10) // (Fcpu/64 = 125kHz clock = ~490Hz PWM frequency)
+    );
+
+    TCNT1=0x00;
+
+	speed_leds_set_brightness(0);
+	speed_leds_set_level(0);
+}
+
+void speed_leds_set_brightness(uint8_t brightness)
+{
+	uint16_t linearised_brightness = brightness * brightness;
+	linearised_brightness = (linearised_brightness & 0xFF00) >> 8;
+	OCR1B = 255-linearised_brightness;
 }
 
 void speed_leds_set_level(uint8_t level)

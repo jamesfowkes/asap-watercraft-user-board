@@ -35,28 +35,28 @@
  */
 
 //Battery indicator LEDs
-#define BATLEDS_DDR_1 DDRD
-#define BATLEDS_PORT_1 PORTD
-#define LED1 (1<<PD2)
-#define LED2 (1<<PD3)
+#define BATLEDS_DDR_1 DDRC
+#define BATLEDS_PORT_1 PORTC
+#define LED1 (1<<PD4)
+#define LED2 (1<<PD5)
 #define LED3 (1<<PD6)
 #define LED4 (1<<PD7)
 
-#define BATLEDS_DDR_2 DDRC
-#define BATLEDS_PORT_2 PORTC
-#define LED5 (1<<PC4)
+#define BATLEDS_DDR_2 DDRD
+#define BATLEDS_PORT_2 PORTD
+#define LED5 (1<<PC3)
 #define LED6 (1<<PC5)
 #define LED7 (1<<PC6)
 #define LED8 (1<<PC7)
 
-static const uint32_t LED_FLASH_PERIOD_MS = 250;
+static const uint8_t LED_BLINK_PERIOD_MS = 250;
 
 /*
  * Private Variables
  */
 
-static bool s_flash_bottom_led = false;
-static uint8_t s_flash_timer = 0;
+static bool s_blink_bottom_led = false;
+static uint8_t s_blink_timer = 0;
 
 /*
  * Public Functions
@@ -117,18 +117,18 @@ void battery_leds_set_level(uint8_t level)
 	}
 }
 
-void battery_leds_set_flash(bool on)
+void battery_leds_blink(bool on)
 {
-	s_flash_bottom_led = on;
+	s_blink_bottom_led = on;
 }
 
 void battery_leds_tick(uint32_t tick_ms)
 {
-	s_flash_timer = subtract_not_below_zero(s_flash_timer, tick_ms);
+	s_blink_timer = subtract_not_below_zero(s_blink_timer, (uint8_t)tick_ms);
 
-	if ( s_flash_timer == 0 )
+	if ( s_blink_timer == 0 )
 	{
-		s_flash_timer = LED_FLASH_PERIOD_MS;
-		if (s_flash_bottom_led) { BATLEDS_PORT_1 ^= LED1; }
+		s_blink_timer = LED_BLINK_PERIOD_MS;
+		if (s_blink_bottom_led) { BATLEDS_PORT_1 ^= LED1; }
 	}
 }

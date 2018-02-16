@@ -27,6 +27,7 @@
 #include "battery.h"
 #include "switches.h"
 #include "util.h"
+#include "debug.h"
 
 /*
  * Defines, Typedefs, Constants
@@ -41,70 +42,9 @@
  */
 
 static uint8_t s_battery_states[2] = {0,0};
-static CHARGE_MODE s_charge_mode = CHARGE_MODE_NOT_CHARGING;
+
+static bool s_charging = false;
 static uint32_t s_timer = ADC_UPDATE_PERIOD;
-
-static void start_charging()
-{
-	// TODO: Turn on charging?
-	s_timer=CHARGE_RECHECK_TIME_MS;
-}
-
-static void stop_charging()
-{
-	// TODO: Turn off charging
-	s_timer=CHARGE_RECHECK_TIME_MS;
-}
-
-static void start_settling_delay()
-{
-	s_timer = INPUT_SETTLING_TIME_MS;
-}
-
-static CHARGE_MODE handle_not_charging()
-{
-	CHARGE_MODE new_mode = CHARGE_MODE_NOT_CHARGING;
-
-	if (s_battery_states[ADC_CHANNEL_CHARGE_INPUT] > LEVELS[0])
-	{
-		start_charging();
-		new_mode = CHARGE_MODE_CHARGING;
-	}
-
-	return new_mode;
-}
-
-static CHARGE_MODE handle_charging()
-{
-	CHARGE_MODE new_mode = CHARGE_MODE_CHARGING;
-	if (s_timer == 0)
-	{
-		stop_charging();
-		start_settling_delay();
-		new_mode = CHARGE_MODE_TESTING_CHARGE_LEVEL;
-	}
-
-	return new_mode;
-}
-
-static CHARGE_MODE handle_testing_charge_level()
-{
-	CHARGE_MODE new_mode = CHARGE_MODE_CHARGING;
-	if (s_timer == 0)
-	{
-		//Measure if the charger is still connected.
-		if (s_battery_states[ADC_CHANNEL_CHARGE_INPUT] > LEVELS[0])
-		{
-			start_charging();
-			new_mode = CHARGE_MODE_CHARGING;
-		}
-		else
-		{
-			new_mode = CHARGE_MODE_NOT_CHARGING;
-		}
-	}
-	return new_mode;
-}
 
 static uint16_t get_high_level_transition(uint8_t state)
 {
@@ -134,23 +74,29 @@ static uint8_t adc_read_to_charge_state(uint16_t adc_read)
 	return 0;
 }
 
-static uint8_t update_state(uint8_t channel)
+static uint8_t update_state(ADC_CHANNEL_ENUM channel, uint8_t old_state)
 {
-	if (channel > 1) { return 0; }
+	uint8_t new_state = 0;
 
-	uint16_t adc_reading = adc_read(channel);
+	if (channel > ADC_CHANNEL_CHARGE_INPUT) { return 0; }
+
+	uint16_t adc_reading = !in_debug_mode() ? adc_read(channel) : debug_get_adc_read(channel);
 
 	// Get the levels for transitioning out of this charge state,
-	uint16_t high_transition_level = get_high_level_transition(s_battery_states[channel]);
-	uint16_t low_transition_level = get_low_level_transition(s_battery_states[channel]);
+	uint16_t high_transition_level = get_high_level_transition(old_state);
+	uint16_t low_transition_level = get_low_level_transition(old_state);
 
 	// Move to new state if outside levels
 	if ((adc_reading > high_transition_level) || (adc_reading < low_transition_level))
 	{
-		s_battery_states[channel] = adc_read_to_charge_state(adc_reading);
+		new_state = adc_read_to_charge_state(adc_reading);
+	}
+	else
+	{
+		new_state = old_state;
 	}
 	
-	return s_battery_states[channel];
+	return new_state;
 }
 
 /*
@@ -159,13 +105,12 @@ static uint8_t update_state(uint8_t channel)
 
 void battery_setup() { /* No setup required */ }
 
-uint8_t battery_get_last_state(uint8_t channel)
+uint8_t battery_get_last_state(ADC_CHANNEL_ENUM channel)
 {
-	return channel < 2 ? s_battery_states[channel] : 0;
+	return channel <= ADC_CHANNEL_CHARGE_INPUT ? s_battery_states[channel] : 0;
 }
 
-
-uint8_t battery_get_charge_mode() { return s_charge_mode; }
+bool battery_is_charging() { return s_charging; }
 
 void battery_tick(uint32_t tick_ms)
 {
@@ -174,26 +119,10 @@ void battery_tick(uint32_t tick_ms)
 	if (s_timer == 0)
 	{
 		s_timer = ADC_UPDATE_PERIOD;
-		update_state(ADC_CHANNEL_CHARGE_INPUT);
-		update_state(ADC_CHANNEL_BATTERY_VOLTAGE);
-	}
-}
-
-void battery_task()
-{
-	switch(s_charge_mode)
-	{
-
-	case CHARGE_MODE_NOT_CHARGING:
-		s_charge_mode = handle_not_charging();
-		break;
-
-	case CHARGE_MODE_CHARGING:
-		s_charge_mode = handle_charging();
-		break;
-
-	case CHARGE_MODE_TESTING_CHARGE_LEVEL:
-		s_charge_mode = handle_testing_charge_level();
-		break;
+		s_battery_states[ADC_CHANNEL_CHARGE_INPUT] = update_state(ADC_CHANNEL_CHARGE_INPUT, s_battery_states[ADC_CHANNEL_CHARGE_INPUT]);
+		s_battery_states[ADC_CHANNEL_BATTERY_VOLTAGE] = update_state(ADC_CHANNEL_BATTERY_VOLTAGE, s_battery_states[ADC_CHANNEL_BATTERY_VOLTAGE]);
+	
+		s_charging = s_battery_states[ADC_CHANNEL_CHARGE_INPUT] >= s_battery_states[ADC_CHANNEL_BATTERY_VOLTAGE];
+		s_charging &= s_battery_states[ADC_CHANNEL_CHARGE_INPUT] > 0;
 	}
 }
