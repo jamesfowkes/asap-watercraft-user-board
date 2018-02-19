@@ -25,15 +25,15 @@ enum charge_mode
 typedef enum charge_mode CHARGE_MODE;
 
 static const uint16_t LEVELS[] = {
-	511,
+	496,
+	499,
+	508,
 	519,
-	536,
-	561,
-	592,
-	628,
-	670,
-	716,
-	767
+	533,
+	550,
+	570,
+	591,
+	615
 };
 
 static const uint8_t HYSTERESIS[] = {0, 2, 4, 6, 8, 10, 12, 14, 16};
