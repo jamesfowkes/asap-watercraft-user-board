@@ -73,8 +73,8 @@ static inline void enable_txc_interrupt() { UCSRB |= _BV(TXCIE); }
 
 void serial_setup(bool& rx_flag, bool& tx_complete)
 {
-
     SERIAL_TX_DDR |= (1 << SERIAL_TX_PIN);
+    SERIAL_RX_PORT |= (1 << SERIAL_RX_PIN);
 
     sp_rx_flag = &rx_flag;
     sp_tx_complete_flag = &tx_complete;
