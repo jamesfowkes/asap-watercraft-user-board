@@ -47,7 +47,6 @@ void charge_fade_reset()
 
 void charge_fade_tick(uint32_t tick_ms)
 {
-	uint16_t actual_brightness;
 	s_fade_timer = subtract_not_below_zero(s_fade_timer, tick_ms);
 		
 	if (s_fade_timer == 0)
